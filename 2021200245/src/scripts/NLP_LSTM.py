@@ -31,8 +31,8 @@ class TranslationDataset(Dataset):
 # pad sequences
 def collate_fn(batch):
     src_batch, trg_batch = zip(*batch)
-    src_batch = pad_sequence(src_batch, padding_value=sp.piece_to_id('<pad>'), batch_first=True)  
-    trg_batch = pad_sequence(trg_batch, padding_value=sp.piece_to_id('<pad>'), batch_first=True)  
+    src_batch = pad_sequence(src_batch, padding_value=zh_sp.piece_to_id('<pad>'), batch_first=True)  
+    trg_batch = pad_sequence(trg_batch, padding_value=en_sp.piece_to_id('<pad>'), batch_first=True)  
     return src_batch, trg_batch
 
 class Encoder(nn.Module):
@@ -217,16 +217,16 @@ val_dataloader = DataLoader(val_dataset, batch_size=128, collate_fn=collate_fn)
 en_vocab_size = en_sp.piece_size()
 zh_vocab_size = zh_sp.piece_size()
 
-src_vocab_size = zh_vocab_size
-trg_vocab_size = en_vocab_size
-d_model = 256
-num_heads = 8
-num_layers = 3
-ff_hidden_dim = 512
+input_dim = zh_vocab_size
+output_dim = en_vocab_size
+emb_dim = 256
+hidden_dim = 512
+n_layers = 2
 dropout = 0.2
 
-model = Transformer(src_vocab_size, trg_vocab_size, d_model, num_heads, num_layers, ff_hidden_dim, dropout).to(device)
-
+encoder = Encoder(input_dim, emb_dim, hidden_dim, n_layers, dropout).to(device)
+decoder = Decoder(output_dim, emb_dim, hidden_dim, n_layers, dropout).to(device)
+model = Seq2Seq(encoder, decoder).to(device)
 optimizer = optim.Adam(model.parameters(), lr=0.0001)
 criterion = nn.CrossEntropyLoss(ignore_index=zh_sp.piece_to_id('<pad>'))
 
